@@ -1,0 +1,36 @@
+version: '2'
+services:
+    mariadb:
+        image: mariadb:latest
+        container_name: mariadb
+        volumes:
+            - ./mariadb/volume:/var/lib/mysql
+            - ./mariadb/conf.d:/etc/mysql/conf.d
+        environment:
+            - MYSQL_ROOT_PASSWORD=root
+
+    django:
+        build: ./django
+        container_name: django
+        volumes:
+            - ./django/myapp:/usr/src/app
+        working_dir: /usr/src/app
+        ports:
+            - "8001:8001"
+        links:
+            - mariadb
+        command: "uwsgi --socket :8001 --module myapp.wsgi"
+
+
+    nginx:
+        image: nginx:latest
+        container_name: nginx
+        volumes:
+            - ./nginx/conf.d:/etc/nginx/conf.d/
+        links:
+            - django
+        volumes_from:
+            - django
+        ports:
+            - "80:80"
+            - "443:443"
